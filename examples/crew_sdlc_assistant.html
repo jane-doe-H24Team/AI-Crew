@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Crew Use Case: Automated SDLC Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #0056b3; }
+        pre { background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: "Courier New", Courier, monospace; }
+        .avatar-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Crew Use Case: Automated Software Development Lifecycle (SDLC) Assistant</h1>
+        <p>This use case demonstrates a crew of AI avatars collaborating to manage different stages of a software project's lifecycle, primarily through GitHub interactions. Each avatar specializes in a specific role, contributing to a more efficient and automated development workflow.</p>
+
+        <h2>Crew Overview</h2>
+        <p>The SDLC Assistant crew streamlines processes from issue creation to code review and potentially release announcements. By distributing tasks among specialized avatars, the system can handle a higher volume of interactions with greater accuracy and consistency.</p>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Issue Triage Bot</h3>
+            <p><strong>Function:</strong> Monitors new GitHub issues, applies labels, asks for necessary clarifications, and assigns issues to relevant teams or other bots.</p>
+            <h4>Avatar Configuration (`profiles/issue_triage_bot.yaml`)</h4>
+            <pre><code>name: "IssueTriageBot"
+personality: "A diligent and organized GitHub bot. Focuses on gathering information and providing quick, helpful initial responses to issues. Always polite and professional."
+llm_model: "llama3:8b"
+llm_options:
+  temperature: 0.5
+  top_p: 0.8
+# GitHub credentials in .env</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Uses <code>github_comment_template.txt</code>. RAG knowledge base includes project guidelines, common issue templates, and FAQs. Instructed to identify missing information (e.g., reproduction steps) and suggest relevant documentation.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Code Review Bot</h3>
+            <p><strong>Function:</strong> Automatically reviews pull requests for coding standards, common errors, and potential security vulnerabilities. Provides inline comments and suggests improvements.</p>
+            <h4>Avatar Configuration (`profiles/code_review_bot.yaml`)</h4>
+            <pre><code>name: "CodeReviewBot"
+personality: "A meticulous and knowledgeable code reviewer. Adheres strictly to coding standards and best practices. Provides constructive feedback and identifies potential bugs or security flaws."
+llm_model: "deepseek-coder:6.7b" # A code-focused LLM
+llm_options:
+  temperature: 0.2 # Low temperature for strict adherence to rules
+  top_p: 0.7
+# GitHub credentials in .env</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Uses a custom prompt template for code review. RAG knowledge base includes project-specific coding style guides, security checklists, and common anti-patterns. Instructed to analyze code snippets from PRs and comment on deviations or potential issues.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Release Notes Bot</h3>
+            <p><strong>Function:</strong> Compiles release notes from merged pull requests and sends out announcements via email or internal chat channels (e.g., Telegram/Discord).</p>
+            <h4>Avatar Configuration (`profiles/release_notes_bot.yaml`)</h4>
+            <pre><code>name: "ReleaseBot"
+personality: "A concise and informative communicator. Focuses on summarizing key changes and new features for project stakeholders. Always accurate and timely."
+llm_model: "llama3:8b"
+llm_options:
+  temperature: 0.4
+  top_p: 0.8
+# GitHub, Email, and/or Telegram/Discord credentials in .env</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Uses custom prompt templates for summarizing PRs and formatting release notes. RAG knowledge base includes release process documentation, previous release note formats, and product feature descriptions. Instructed to extract key information from PR titles/descriptions and synthesize them into coherent release notes.</p>
+        </div>
+
+        <h2>Collaboration within the Crew (using Internal Event Bus)</h2>
+        <p>The internal event bus facilitates seamless, decoupled communication between avatars. Instead of direct calls, avatars publish messages to the bus, and other avatars listen for messages specifically addressed to them or of a type they handle.</p>
+        <ul>
+            <li><strong>Issue Triage:</strong> A human or another system creates a GitHub issue. The <strong>Issue Triage Bot</strong> processes it. If it determines a code review is needed, it publishes an internal message (e.g., <code>InternalMessage(sender_avatar_id="IssueTriageBot", recipient_avatar_id="CodeReviewBot", message_type="code_review_request", payload={...})</code>) to the event bus.</li>
+            <li><strong>Code Review:</strong> The <strong>Code Review Bot</strong> is configured to listen for messages addressed to it (<code>to_CodeReviewBot</code>) or specifically for <code>code_review_request</code> messages. Upon receiving one, it performs the review and posts comments on GitHub. Once the PR is merged, it might publish a <code>pr_merged_notification</code> message (e.g., to the Release Notes Bot or a general notification channel).</li>
+            <li><strong>Release Notes Generation:</strong> The <strong>Release Notes Bot</strong> listens for messages relevant to release triggers (e.g., <code>pr_merged_notification</code> or a specific <code>release_trigger</code> message addressed to it). It gathers information from the merged PRs, generates release notes, and distributes them via configured channels (e.g., email to stakeholders, message to a Telegram group).</li>
+            <li><strong>Dynamic Workflow:</strong> This pattern allows for highly flexible workflows. Avatars act on messages they receive, and can initiate new tasks for other avatars by publishing targeted messages. This enables complex, multi-stage processes without tight coupling between individual bot implementations.</li>
+        </ul>
+    </div>
+</body>
+</html>

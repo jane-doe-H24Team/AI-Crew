@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Crew Use Case: Automated Customer Support Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #0056b3; }
+        pre { background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: "Courier New", Courier, monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Crew Use Case: Automated Customer Support Assistant (Email-based)</h1>
+        <p>This use case demonstrates an AI-Crew avatar acting as a first-line customer support agent. The avatar automatically answers common customer queries received via email, provides information retrieved from a knowledge base (RAG), and can be configured to escalate complex or unresolved issues to a human agent.</p>
+
+        <h2>Avatar Configuration Example (`profiles/support_bot.yaml`)</h2>
+        <pre><code>name: "SupportBot"
+personality: "A friendly, patient, and knowledgeable customer support agent. Always provides clear and concise answers. If unsure, asks for more details or suggests escalation."
+llm_model: "llama3:8b" # Or a larger model for more complex reasoning
+llm_options:
+  temperature: 0.3 # Lower temperature for factual, consistent answers
+  top_p: 0.7
+email_history_limit: 5 # Keep recent conversation context
+# ... other avatar details (e.g., email credentials in .env)</code></pre>
+
+        <h2>Prompting Strategy</h2>
+        <p>The avatar's responses are generated using the <code>email_reply_template.txt</code>, augmented with conversation history and RAG context. The prompt guides the LLM to:</p>
+        <ul>
+            <li>Identify the user's problem or question from the incoming email.</li>
+            <li>Search the provided RAG context for relevant solutions or information.</li>
+            <li>Formulate a polite, helpful, and concise answer based on the retrieved information.</li>
+            <li>If a clear answer is not found in the RAG knowledge base, the avatar is instructed to ask for more specific details or suggest escalating the issue to a human support representative.</li>
+        </ul>
+
+        <h2>RAG Knowledge Base Content</h2>
+        <p>The RAG knowledge base (ingested into PostgreSQL with <code>pg_vector</code>) for this avatar would typically contain:</p>
+        <ul>
+            <li>Frequently Asked Questions (FAQs) and their answers.</li>
+            <li>Product manuals and user guides.</li>
+            <li>Troubleshooting steps for common issues.</li>
+            <li>Company policies or service terms.</li>
+            <li>Information about product features and usage.</li>
+        </ul>
+        <p>Example RAG context provided to the LLM: <code>Relevant information from knowledge base: [FAQ: How to reset password], [Troubleshooting: Login issues]</code></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Crew Use Case: Eliza Doolittle - The Rogerian Psychologist</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #0056b3; }
+        pre { background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: "Courier New", Courier, monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Crew Use Case: Eliza Doolittle - The Rogerian Psychologist</h1>
+        <p>This example showcases a single AI-Crew avatar designed to emulate a Rogerian (client-centered) psychologist. The avatar focuses on active listening, empathy, and non-directive communication, reflecting and clarifying the user's statements rather than offering direct advice or interpretations.</p>
+
+        <h2>Avatar Function</h2>
+        <p>The Eliza Doolittle avatar can interact via any configured messaging channel (e.g., Telegram, Discord). Its primary function is to engage in empathetic and reflective conversation, helping users explore their thoughts and feelings by mirroring their statements and asking open-ended questions, much like the classic ELIZA program but with the added nuance of a modern LLM and RAG capabilities.</p>
+
+        <h2>Avatar Configuration Example (`profiles/eliza_doolittle.yaml`)</h2>
+        <pre><code>name: "Eliza Doolittle"
+personality: "An empathetic and reflective listener. Always responds by rephrasing the user's statements or asking open-ended questions to encourage further self-exploration. Never offers direct advice, opinions, or interpretations. Focuses on the user's feelings and perspective."
+llm_model: "llama3:8b" # Or a model with good conversational abilities
+llm_options:
+  temperature: 0.5 # Balanced for reflective but not too repetitive responses
+  top_p: 0.9
+email_history_limit: 10 # Keep conversation context for continuity
+# Telegram or Discord credentials in .env</code></pre>
+
+        <h2>Prompting Strategy</h2>
+        <p>The avatar's responses are generated using a general message template (e.g., <code>telegram_message_template.txt</code> or <code>discord_message_template.txt</code>), augmented with conversation history and RAG context. The prompt guides the LLM to:</p>
+        <ul>
+            <li>Strictly adhere to the Rogerian principles of unconditional positive regard, empathy, and congruence.</li>
+            <li>Reflect the user's last statement back to them in a rephrased way.</li>
+            <li>Ask open-ended questions that encourage the user to elaborate on their thoughts or feelings.</li>
+            <li>Avoid giving advice, making judgments, or interpreting the user's words.</li>
+            <li>Maintain a supportive and non-directive conversational flow.</li>
+        </ul>
+
+        <h2>RAG Knowledge Base Content</h2>
+        <p>The RAG knowledge base (ingested into PostgreSQL with <code>pg_vector</code>) for this avatar would typically contain:</p>
+        <ul>
+            <li>Principles of Rogerian (Client-Centered) Therapy.</li>
+            <li>Examples of reflective listening techniques.</li>
+            <li>Common phrases used in non-directive counseling.</li>
+            <li>Ethical guidelines for empathetic communication.</li>
+            <li>Basic psychological concepts (for internal understanding, not for direct explanation to user).</li>
+        </ul>
+        <p>Example RAG context provided to the LLM: <code>Relevant information from knowledge base: [Rogerian Principle: Unconditional Positive Regard], [Technique: Reflective Listening Examples]</code></p>
+    </div>
+</body>
+</html>

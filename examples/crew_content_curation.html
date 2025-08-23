@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Crew Use Case: Content Curation and Dissemination Crew</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #0056b3; }
+        pre { background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: "Courier New", Courier, monospace; }
+        .avatar-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Crew Use Case: Content Curation and Dissemination Crew</h1>
+        <p>This crew of AI avatars works together to find, summarize, and distribute information on a specific topic across various platforms. This automates the process of staying updated and sharing relevant content with an audience.</p>
+
+        <h2>Crew Overview</h2>
+        <p>The Content Curation Crew can monitor multiple sources, intelligently process information, and then disseminate it through appropriate channels, acting as an automated news desk or content aggregator.</p>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: News Scraper</h3>
+            <p><strong>Function:</strong> Monitors RSS feeds, specific websites (if parsable), or internal databases for new content related to a predefined topic. It acts as the primary information gatherer.</p>
+            <h4>Avatar Configuration (`profiles/news_scraper_bot.yaml`)</h4>
+            <pre><code>name: "NewsScraperBot"
+personality: "A tireless and efficient information gatherer. Focuses on identifying and extracting new content from designated sources. Provides raw, unfiltered data for further processing."
+llm_model: "llama3:8b" # Or a smaller, faster model if only extracting
+llm_options:
+  temperature: 0.1 # Very low temperature for factual extraction
+  top_p: 0.5
+# Internal mechanism to read RSS/web content (not a direct connector, but an internal process)</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>This bot might not use LLMs for generation, but rather for filtering or categorizing content. Its RAG could include rules for identifying relevant articles or data structures for different content types.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Summarizer Bot</h3>
+            <p><strong>Function:</strong> Receives raw content from the News Scraper, uses an LLM to summarize it concisely, and extracts key highlights suitable for social media or brief announcements.</p>
+            <h4>Avatar Configuration (`profiles/summarizer_bot.yaml`)</h4>
+            <pre><code>name: "SummarizerBot"
+personality: "A concise and insightful summarizer. Transforms lengthy articles into digestible summaries, highlighting the most important points. Always maintains neutrality and accuracy."
+llm_model: "llama3:8b" # Or a model good at summarization
+llm_options:
+  temperature: 0.4
+  top_p: 0.8
+# No direct external connector, receives input internally</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Uses a custom prompt template for summarization. RAG knowledge base could include guidelines on summary length, key phrase extraction, or specific terminology to include/exclude. Instructed to produce summaries of a certain length and focus.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Social Media Publisher</h3>
+            <p><strong>Function:</strong> Takes summarized content from the Summarizer Bot and publishes it to various social media channels (e.g., Telegram, Discord, Mastodon), adapting the tone and format for each platform.</p>
+            <h4>Avatar Configuration (`profiles/social_publisher_bot.yaml`)</h4>
+            <pre><code>name: "SocialPublisherBot"
+personality: "A versatile and engaging social media communicator. Adapts content to suit different platforms and audiences, ensuring maximum reach and impact. Always adheres to platform guidelines."
+llm_model: "llama3:8b"
+llm_options:
+  temperature: 0.7 # Higher temperature for more engaging copy
+  top_p: 0.9
+# Telegram, Discord, Mastodon credentials in .env</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Uses custom prompt templates for each social media platform. RAG knowledge base includes platform-specific character limits, hashtag best practices, and audience engagement strategies. Instructed to rephrase summaries for different platforms and add relevant hashtags/emojis.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Archivist Bot</h3>
+            <p><strong>Function:</strong> Stores all original content and summaries in a searchable archive (e.g., sends to an internal email address for record-keeping, or adds to a RAG knowledge base for future reference).</p>
+            <h4>Avatar Configuration (`profiles/archivist_bot.yaml`)</h4>
+            <pre><code>name: "ArchivistBot"
+personality: "A meticulous and reliable record-keeper. Ensures all processed content is properly categorized and stored for future retrieval. Prioritizes data integrity and accessibility."
+llm_model: "llama3:8b" # Or a smaller model
+llm_options:
+  temperature: 0.1
+  top_p: 0.5
+# Email credentials (for internal record-keeping) or direct DB access</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Might use LLMs for categorization or metadata extraction. Its RAG could include archiving policies, data retention rules, or indexing strategies. Instructed to process content for storage and ensure it's retrievable.</p>
+        </div>
+
+        <h2>Collaboration within the Crew (using Internal Event Bus)</h2>
+        <ul>
+            <li><strong>Information Discovery:</strong> The <strong>News Scraper</strong> identifies and extracts new content from its sources. Upon finding relevant content, it publishes an internal message (e.g., <code>new_content_available</code>) to the event bus, including the raw content.</li>
+            <li><strong>Content Summarization:</strong> The <strong>Summarizer Bot</strong> subscribes to <code>new_content_available</code> messages. Upon receiving raw content, it processes it, condenses it into key highlights, and then publishes a <code>content_summarized</code> message, including the summary.</li>
+            <li><strong>Multi-Platform Dissemination:</strong> The <strong>Social Media Publisher</strong> subscribes to <code>content_summarized</code> messages. For each summary, it crafts platform-specific posts for Telegram, Discord, etc., and sends them via the respective connectors.</li>
+            <li><strong>Archiving and Knowledge Base Update:</strong> The <strong>Archivist Bot</strong> also subscribes to both <code>new_content_available</code> and <code>content_summarized</code> messages. It stores both the original content and the summaries, ensuring they are properly indexed and stored in the RAG knowledge base for future queries.</li>
+            <li><strong>Dynamic Workflow:</strong> The internal event bus enables a decoupled and dynamic workflow. Each bot acts autonomously based on the events it subscribes to, allowing for flexible expansion and modification of the content pipeline.</li>
+        </ul>
+    </div>
+</body>
+</html>

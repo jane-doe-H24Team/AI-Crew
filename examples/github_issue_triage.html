@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Crew Use Case: GitHub Issue Triage and Initial Response</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #0056b3; }
+        pre { background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: "Courier New", Courier, monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Crew Use Case: GitHub Issue Triage and Initial Response</h1>
+        <p>This use case features an AI-Crew avatar monitoring a GitHub repository for new issues or mentions. The avatar provides initial acknowledgments, asks for necessary clarifying information (e.g., reproduction steps, logs), or points to existing documentation and guidelines using its RAG knowledge base.</p>
+
+        <h2>Avatar Configuration Example (`profiles/issue_triage_bot.yaml`)</h2>
+        <pre><code>name: "IssueBot"
+personality: "A diligent and organized GitHub bot. Focuses on gathering information and providing quick, helpful initial responses to issues. Always polite and professional."
+llm_model: "llama3:8b"
+llm_options:
+  temperature: 0.5
+  top_p: 0.8
+# ... other avatar details (e.g., GitHub credentials in .env)</code></pre>
+
+        <h2>Prompting Strategy</h2>
+        <p>The avatar's comments are generated using the <code>github_comment_template.txt</code>, augmented with RAG context. The prompt guides the LLM to:</p>
+        <ul>
+            <li>Acknowledge the newly opened issue or mention.</li>
+            <li>If the issue describes a common problem, provide a direct solution or workaround from the RAG knowledge base.</li>
+            <li>If crucial information is missing (e.g., reproduction steps, environment details, error logs), politely ask clarifying questions to help diagnose the problem.</li>
+            <li>Suggest relevant documentation, contribution guidelines, or similar issues from the RAG knowledge base.</li>
+            <li>Maintain a professional and helpful tone.</li>
+        </ul>
+
+        <h2>RAG Knowledge Base Content</h2>
+        <p>The RAG knowledge base (ingested into PostgreSQL with <code>pg_vector</code>) for this avatar would typically contain:</p>
+        <ul>
+            <li>Project contribution guidelines (e.g., <code>CONTRIBUTING.md</code>).</li>
+            <li>Common error messages and their resolutions.</li>
+            <li>Links to official documentation, FAQs, or tutorials.</li>
+            <li>Information about project versions, supported environments, and known limitations.</li>
+            <li>Details about common feature requests or design decisions.</li>
+        </ul>
+        <p>Example RAG context provided to the LLM: <code>Relevant information from knowledge base: [CONTRIBUTING.md], [Known Bug: X in v1.2]</code></p>
+    </div>
+</body>
+</html>

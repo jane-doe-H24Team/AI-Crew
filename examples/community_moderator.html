@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Crew Use Case: Telegram/Discord Community Moderator</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #0056b3; }
+        pre { background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: "Courier New", Courier, monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Crew Use Case: Telegram/Discord Community Moderator (Q&A)</h1>
+        <p>This use case involves an AI-Crew avatar participating in a community chat (Telegram or Discord). The avatar's primary role is to answer questions from members based on a shared knowledge base (RAG), provide helpful links, or direct users to appropriate resources, thereby reducing the load on human moderators.</p>
+
+        <h2>Avatar Configuration Example (`profiles/community_helper.yaml`)</h2>
+        <pre><code>name: "CommunityHelper"
+personality: "An enthusiastic and helpful community member. Always ready to assist with questions and share knowledge. Keeps responses concise and friendly."
+llm_model: "llama3:8b"
+llm_options:
+  temperature: 0.6
+  top_p: 0.9
+# ... other avatar details (e.g., Telegram/Discord credentials in .env)</code></pre>
+
+        <h2>Prompting Strategy</h2>
+        <p>The avatar's replies are generated using the <code>telegram_message_template.txt</code> or <code>discord_message_template.txt</code>, augmented with RAG context. The prompt guides the LLM to:</p>
+        <ul>
+            <li>Directly answer the user's question if the information is available and relevant in the RAG knowledge base.</li>
+            <li>Provide relevant links, code snippets, or short explanations from the RAG context.</li>
+            <li>Maintain a friendly, supportive, and encouraging tone appropriate for a community setting.</li>
+            <li>If the question is outside the scope of the knowledge base, politely indicate that or suggest where else the user might find help.</li>
+        </ul>
+
+        <h2>RAG Knowledge Base Content</h2>
+        <p>The RAG knowledge base (ingested into PostgreSQL with <code>pg_vector</code>) for this avatar would typically contain:</p>
+        <ul>
+            <li>Frequently Asked Questions (FAQs) specific to the community or project.</li>
+            <li>Community rules and guidelines.</li>
+            <li>Links to official documentation, tutorials, or external resources.</li>
+            <li>Information about common discussion topics, events, or announcements.</li>
+            <li>Details about how to get help from human moderators or administrators.</li>
+        </ul>
+        <p>Example RAG context provided to the LLM: <code>Relevant information from knowledge base: [FAQ: How to join server], [Link: Official documentation]</code></p>
+    </div>
+</body>
+</html>

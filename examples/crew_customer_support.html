@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Crew Use Case: Multi-Channel Customer Support with Escalation Crew</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #0056b3; }
+        pre { background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: "Courier New", Courier, monospace; }
+        .avatar-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Crew Use Case: Multi-Channel Customer Support with Escalation Crew</h1>
+        <p>This crew of AI avatars provides comprehensive customer support across multiple communication channels (Email, Telegram, Discord). It features specialized avatars for initial response and a robust escalation mechanism using the internal event bus for seamless hand-offs to more specialized bots or human agents.</p>
+
+        <h2>Crew Overview</h2>
+        <p>The Customer Support Crew ensures that customer inquiries are handled efficiently, directing them to the appropriate level of support based on complexity and type. This reduces response times and improves customer satisfaction.</p>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Front-line Email Support</h3>
+            <p><strong>Function:</strong> Handles common customer queries received via email, providing answers from a RAG knowledge base. Escalates complex or unanswerable questions internally.</p>
+            <h4>Avatar Configuration (`profiles/email_support_bot.yaml`)</h4>
+            <pre><code>name: "EmailSupportBot"
+personality: "A friendly, patient, and knowledgeable first-line email support agent. Always provides clear and concise answers. If unable to resolve, escalates internally."
+llm_model: "llama3:8b"
+llm_options:
+  temperature: 0.3
+  top_p: 0.7
+email_history_limit: 5
+# Email credentials in .env</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Uses <code>email_reply_template.txt</code>. RAG knowledge base includes FAQs, product manuals, and basic troubleshooting. If a query cannot be answered, it publishes an internal <code>escalate_query</code> message via the event bus.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Front-line Chat Support</h3>
+            <p><strong>Function:</strong> Provides real-time support on Telegram and Discord, answering common questions and escalating complex issues internally.</p>
+            <h4>Avatar Configuration (`profiles/chat_support_bot.yaml`)</h4>
+            <pre><code>name: "ChatSupportBot"
+personality: "An energetic and quick-responding chat support agent. Provides immediate assistance and guides users efficiently. Knows when to seek specialized help."
+llm_model: "llama3:8b"
+llm_options:
+  temperature: 0.4
+  top_p: 0.8
+# Telegram and Discord credentials in .env</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Uses <code>telegram_message_template.txt</code> or <code>discord_message_template.txt</code>. RAG knowledge base is similar to Email Support. If a query cannot be answered, it publishes an internal <code>escalate_query</code> message via the event bus.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Technical Support Specialist</h3>
+            <p><strong>Function:</strong> Subscribes to internal <code>escalate_query</code> messages. Handles technical issues escalated from front-line bots. Has access to more in-depth technical knowledge and can communicate with human developers.</p>
+            <h4>Avatar Configuration (`profiles/tech_support_bot.yaml`)</h4>
+            <pre><code>name: "TechSupportBot"
+personality: "A highly analytical and problem-solving technical expert. Provides detailed solutions and can diagnose complex issues. Communicates clearly with both users and developers."
+llm_model: "llama3:8b" # Or a more specialized technical LLM
+llm_options:
+  temperature: 0.2
+  top_p: 0.7
+# Internal communication only, or email/internal chat credentials</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Subscribes to <code>escalate_query</code> messages. RAG knowledge base includes internal debugging guides, advanced troubleshooting steps, and system architecture documentation. Its prompt is designed to analyze escalated query details and formulate a more advanced response or suggest human intervention.</p>
+        </div>
+
+        <div class="avatar-section">
+            <h3>Avatar Role: Human Escalation Notifier</h3>
+            <p><strong>Function:</strong> Subscribes to internal messages that require human intervention (e.g., from Technical Support Specialist). Notifies human agents via email or an internal communication tool.</p>
+            <h4>Avatar Configuration (`profiles/human_notifier_bot.yaml`)</h4>
+            <pre><code>name: "HumanNotifierBot"
+personality: "A reliable and efficient messenger. Ensures critical issues are promptly brought to the attention of human team members. Provides clear summaries of escalated cases."
+llm_model: "llama3:8b" # A smaller model is sufficient
+llm_options:
+  temperature: 0.1
+  top_p: 0.5
+# Email credentials for human notification</code></pre>
+            <h4>Prompting Strategy & RAG</h4>
+            <p>Subscribes to specific internal messages (e.g., <code>human_intervention_needed</code>). Its prompt is designed to summarize the escalated case details into a concise notification for human agents. RAG could include human team contact lists or escalation protocols.</p>
+        </div>
+
+        <h2>Collaboration within the Crew (using Internal Event Bus)</h2>
+        <p>The internal event bus facilitates seamless, decoupled communication between avatars. Instead of direct calls, avatars publish messages to the bus, and other avatars listen for messages specifically addressed to them or of a type they handle.</p>
+        <ul>
+            <li><strong>Initial Contact:</strong> Customers send inquiries via Email, Telegram, or Discord.</li>
+            <li><strong>Front-line Response:</strong> <strong>EmailSupportBot</strong> and <strong>ChatSupportBot</strong> attempt to answer using their RAG knowledge bases.</li>
+            <li><strong>Internal Escalation:</strong> If a front-line bot cannot resolve a query, it publishes an <code>InternalMessage</code> (e.g., <code>InternalMessage(sender_avatar_id="EmailSupportBot", recipient_avatar_id="TechSupportBot", message_type="escalate_query", payload={...})</code>) to the internal event bus. The payload includes the original query details and the avatar's ID.</li>
+            <li><strong>Specialized Handling:</strong> The <strong>TechnicalSupportBot</strong> is configured to listen for messages addressed to it (<code>to_TechSupportBot</code>) or specifically for <code>escalate_query</code> messages. Upon receiving one, it processes the query using its specialized RAG. If it still cannot resolve, it might publish a <code>human_intervention_needed</code> message (e.g., <code>InternalMessage(sender_avatar_id="TechSupportBot", recipient_avatar_id="HumanNotifierBot", message_type="human_intervention_needed", payload={...})</code>).</li>
+            <li><strong>Human Notification:</strong> The <strong>HumanEscalationNotifier</strong> is configured to listen for messages addressed to it (<code>to_HumanNotifierBot</code>) or specifically for <code>human_intervention_needed</code> messages. When it receives such a message, it formats a notification and sends it to the appropriate human team member (e.g., via email or an internal chat system).</li>
+            <li>This internal communication allows for a flexible and dynamic workflow, where avatars can hand off tasks based on their capabilities and the nature of the inquiry, without direct knowledge of each other.</li>
+        </ul>
+    </div>
+</body>
+</html>

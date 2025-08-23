@@ -1,0 +1,43 @@
+# General application settings
+app:
+  log_level: "INFO"
+
+# LLM settings
+llm:
+  default_model: "llama3:8b"
+  default_options:
+    temperature: 0.7
+  filter_model: "llama3:8b" # Model for should_reply_to_email
+
+# RAG settings
+rag:
+  chunk_size: 500
+  chunk_overlap: 50
+  tokenizer_encoding: "cl100k_base"
+  knowledge_base_dir: "knowledge_base"
+  ingest_file_extensions: [".txt", ".md", ".html", ".htm"]
+  distance_threshold: 0.5 # Max L2 distance for RAG retrieval. Lower is more similar.
+
+# Database settings
+database:
+  vector_dimension: 768 # nomic-embed-text has a dimension of 768
+
+# Embeddings settings
+embeddings:
+  default_model: "nomic-embed-text"
+
+# Avatar settings
+avatar:
+  default_email_history_limit: 10
+
+# Scheduler settings
+scheduler:
+  email_check_interval_minutes: 10
+  email_check_jitter_seconds: 120
+  github_check_interval_minutes: 30
+  github_check_jitter_seconds: 180
+  telegram_check_interval_minutes: 5
+  telegram_check_jitter_seconds: 90
+  discord_check_interval_minutes: 5
+  discord_check_jitter_seconds: 90
+
