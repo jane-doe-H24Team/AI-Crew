@@ -16,3 +16,7 @@ tiktoken
 typing_extensions>=4.6.0
 psycopg2-binary==2.9.9
 pgvector
+praw
+slack_sdk
+wikipedia-api
+google-api-python-client

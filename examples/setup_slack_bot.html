@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set Up a Slack Bot</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #2c3e50; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        .token { color: #c0392b; font-weight: bold; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>How to Set Up a Slack Bot for AI-Crew</h1>
+    <p>This guide will walk you through creating a Slack App and getting the necessary Bot Token to use with AI-Crew.</p>
+
+    <h2>Step 1: Create a Slack App</h2>
+    <ul>
+        <li>Go to the <a href="https://api.slack.com/apps" target="_blank">Slack API page</a> and click <strong>"Create New App"</strong>.</li>
+        <li>Choose <strong>"From scratch"</strong>.</li>
+        <li>Give your app a name (e.g., "AI-Crew Avatar") and select the Slack workspace you want to add it to.</li>
+        <li>Click <strong>"Create App"</strong>.</li>
+    </ul>
+
+    <h2>Step 2: Add Permissions (Scopes)</h2>
+    <p>You need to give your bot the correct permissions to read and write messages.</p>
+    <ul>
+        <li>From your app's settings page, go to <strong>"OAuth & Permissions"</strong> in the left sidebar.</li>
+        <li>Scroll down to the <strong>"Scopes"</strong> section. Under "Bot Token Scopes", click <strong>"Add an OAuth Scope"</strong>.</li>
+        <li>Add the following scopes one by one:
+            <ul>
+                <li><code>channels:history</code> (to read messages in public channels)</li>
+                <li><code>groups:history</code> (to read messages in private channels)</li>
+                <li><code>chat:write</code> (to send messages)</li>
+                <li><code>channels:read</code> (to get a list of public channels)</li>
+                <li><code>groups:read</code> (to get a list of private channels)</li>
+                <li><code>auth.test</code> (to get the bot's own user ID)</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>Step 3: Install the App and Get the Token</h2>
+    <ul>
+        <li>At the top of the <strong>"OAuth & Permissions"</strong> page, click <strong>"Install to Workspace"</strong>.</li>
+        <li>Follow the prompts to authorize the app.</li>
+        <li>After installation, you will be redirected back to the "OAuth & Permissions" page. You will now see a <strong class="token">"Bot User OAuth Token"</strong> that starts with <code>xoxb-</code>.</li>
+        <li>Copy this token. This is the value for your <code>AVATAR_NAME_SLACK_BOT_TOKEN</code> variable in your <code>.env</code> file.</li>
+    </ul>
+
+    <h2>Step 4: Invite the Bot to a Channel</h2>
+    <ul>
+        <li>Open your Slack workspace.</li>
+        <li>Go to a channel where you want the bot to be active.</li>
+        <li>In the message box, type <code>/invite @your-bot-name</code> (e.g., <code>/invite @AI-Crew Avatar</code>) and press Enter.</li>
+    </ul>
+
+    <h2>Step 5: Run the Test</h2>
+    <ul>
+        <li>Ensure your AI-Crew application is running with the correct Slack token in the <code>.env</code> file.</li>
+        <li>Send a message in the channel you invited the bot to.</li>
+        <li>When the next <code>scheduled_slack_check</code> runs (or you trigger it manually), the avatar should post a reply in the channel.</li>
+    </ul>
+
+</body>
+</html>

@@ -147,6 +147,61 @@ def get_email_history(conn, avatar_id: str, sender: str, limit: int = 10) -> lis
     return [dict(row) for row in history] if history else []
 
 @db_operation
+def create_chat_history_table(conn):
+    """Creates the chat_history table if it doesn't exist."""
+    logger.debug("Creating chat_history table if it doesn't exist...")
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS chat_history (
+            id SERIAL PRIMARY KEY,
+            avatar_id VARCHAR(255) NOT NULL,
+            platform VARCHAR(50) NOT NULL,
+            chat_id VARCHAR(255) NOT NULL,
+            sender VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            timestamp TIMESTAMPTZ DEFAULT NOW()
+        );
+    ''')
+    cur.execute('''
+        CREATE INDEX IF NOT EXISTS idx_chat_history_lookup
+        ON chat_history (avatar_id, platform, chat_id, timestamp DESC);
+    ''')
+    conn.commit()
+    cur.close()
+    logger.debug("chat_history table created/verified successfully.")
+
+@db_operation
+def add_message_to_chat_history(conn, avatar_id: str, platform: str, chat_id: str, sender: str, message: str):
+    """Adds a chat message to the conversation history."""
+    logger.debug(f"Adding {platform} message to history for avatar {avatar_id} in chat {chat_id}")
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO chat_history (avatar_id, platform, chat_id, sender, message) VALUES (%s, %s, %s, %s, %s)",
+        (avatar_id, platform, chat_id, sender, message)
+    )
+    conn.commit()
+    cur.close()
+
+@db_operation
+def get_chat_history(conn, avatar_id: str, platform: str, chat_id: str, limit: int = 10) -> list:
+    """Retrieves the conversation history for a specific chat."""
+    logger.debug(f"Getting {platform} chat history for avatar {avatar_id} in chat {chat_id}")
+    cur = conn.cursor(cursor_factory=DictCursor)
+    cur.execute(
+        """
+        SELECT sender, message, timestamp
+        FROM chat_history
+        WHERE avatar_id = %s AND platform = %s AND chat_id = %s
+        ORDER BY timestamp DESC
+        LIMIT %s
+        """,
+        (avatar_id, platform, chat_id, limit)
+    )
+    history = cur.fetchall()
+    cur.close()
+    return [dict(row) for row in history] if history else []
+
+@db_operation
 def add_document_to_rag(conn, content: str, embedding: list, metadata: dict = None):
     """Adds a document chunk and its embedding to the RAG knowledge base."""
     logger.debug(f"Adding document to RAG knowledge base. Content length: {len(content)}")

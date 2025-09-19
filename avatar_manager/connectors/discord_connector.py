@@ -1,7 +1,9 @@
 import os
 import logging
 import discord
+import asyncio
 from avatar_manager.connectors.base_connector import BaseConnector
+from avatar_manager import db
 
 logger = logging.getLogger(__name__)
 
@@ -10,18 +12,18 @@ class DiscordConnector(BaseConnector):
         super().__init__(avatar_id)
         self.token = None
         self.client = None
+        self.processed_messages = set()
 
-    def get_credentials(self):
+    async def get_credentials(self):
         self.token = self._get_env_var("DISCORD_TOKEN", required=False)
         if not self.token:
             self.logger.debug("No Discord token found for avatar %s", self.avatar_id)
             return False
         
-        # Intents are crucial for Discord bots
         intents = discord.Intents.default()
-        intents.message_content = True # Required to read message content
-        intents.members = True # Required for some member-related events
-        intents.guilds = True # Required for guild-related events
+        intents.message_content = True
+        intents.members = True
+        intents.guilds = True
 
         self.client = discord.Client(intents=intents)
 
@@ -29,8 +31,10 @@ class DiscordConnector(BaseConnector):
         async def on_ready():
             self.logger.info(f"Discord bot {self.client.user} has connected to Discord!")
 
-        # We don't handle on_message here directly, as we'll poll for updates
-        # This is a simplified setup for polling, not ideal for production Discord bots
+        # Start the client in a background task
+        asyncio.create_task(self.client.start(self.token))
+        # It's not ideal to wait here, but we need the client to be ready for the first run.
+        await asyncio.sleep(5) # Give client time to connect
         return True
 
     async def send_message(self, channel_id: int, text: str):
@@ -39,11 +43,18 @@ class DiscordConnector(BaseConnector):
             return False
 
         try:
-            channel = self.client.get_channel(channel_id)
+            channel = self.client.get_channel(int(channel_id))
             if not channel:
                 self.logger.error(f"Channel {channel_id} not found for avatar {self.avatar_id}")
                 return False
             await channel.send(text)
+            db.add_message_to_chat_history(
+                avatar_id=self.avatar_id,
+                platform="discord",
+                chat_id=str(channel_id),
+                sender=self.client.user.name,
+                message=text
+            )
             self.logger.info("[%s] Discord message sent to channel %s", self.avatar_id, channel_id)
             return True
         except Exception as e:
@@ -51,26 +62,40 @@ class DiscordConnector(BaseConnector):
             return False
 
     async def fetch_updates(self):
-        if not self.client:
+        if not self.client or not self.client.is_ready():
+            self.logger.warning("[%s] Discord client not ready, skipping fetch.", self.avatar_id)
             return []
 
         updates = []
-        # This is a very basic polling mechanism for Discord.
-        # In a real application, you'd typically use webhooks or run the bot's event loop.
-        # For simplicity with FastAPI's scheduler, we'll try to fetch recent messages.
-        # Note: discord.py client.fetch_channel and channel.history are blocking for large histories.
-        # This approach is highly inefficient and not recommended for production.
-        # A proper Discord bot would run its own event loop and process events as they come.
-
-        # To get messages, we need to iterate through guilds and channels
-        # This part is complex for polling and usually handled by the bot's event loop.
-        # For a scheduled check, we would need to store the last checked message ID per channel
-        # and fetch messages since then.
+        self.logger.debug("[%s] Discord polling is highly inefficient. This implementation fetches the last message from each channel and may miss messages.", self.avatar_id)
         
-        # For demonstration, we'll just return an empty list for now.
-        # A proper implementation would involve running the discord.Client in a separate async task
-        # and collecting messages from its on_message event.
-        self.logger.warning("[%s] Discord polling is highly inefficient and not fully implemented for scheduled checks. Consider running discord.Client in a separate task.", self.avatar_id)
+        for guild in self.client.guilds:
+            for channel in guild.text_channels:
+                try:
+                    # Fetch the last message
+                    async for message in channel.history(limit=1):
+                        # Avoid processing own messages and already processed messages
+                        if message.author == self.client.user or message.id in self.processed_messages:
+                            continue
+
+                        self.processed_messages.add(message.id)
+                        db.add_message_to_chat_history(
+                            avatar_id=self.avatar_id,
+                            platform="discord",
+                            chat_id=str(channel.id),
+                            sender=message.author.name,
+                            message=message.content
+                        )
+                        updates.append({
+                            "channel_id": channel.id,
+                            "username": message.author.name,
+                            "text": message.content
+                        })
+                except discord.errors.Forbidden:
+                    self.logger.debug("[%s] No permission to read history in channel %s", self.avatar_id, channel.name)
+                except Exception as e:
+                    self.logger.error("[%s] Error fetching from channel %s: %s", self.avatar_id, channel.name, e)
+        
         return updates
 
 # Note: For a full-fledged Discord bot, you'd typically run client.run(TOKEN) in a separate process/thread.

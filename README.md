@@ -1,51 +1,41 @@
 # AI Crew
 
-AI Crew is a multi-agent system designed to manage a team of autonomous avatars. These avatars can perform various tasks, such as replying to emails, participating in GitHub discussions, and interacting with social media platforms like Telegram and Discord. The system is designed to be highly extensible, allowing for the addition of new avatars, new functionalities, and new communication channels.
+AI Crew is a multi-agent system designed to manage a team of autonomous avatars. These avatars can perform various tasks, such as replying to emails, participating in GitHub discussions, and interacting with social media platforms like Telegram, Discord, Reddit and Slack. The system is designed to be highly extensible, allowing for the addition of new avatars, new functionalities, and new communication channels.
 
-The core of the project is an orchestrator built with FastAPI that manages the avatars' lifecycle and interactions. Each avatar has its own personality, skills, and schedule, defined in a YAML profile. The avatars are powered by language models (LLMs) running locally, which allows for greater privacy and control. To enhance the quality and relevance of LLM responses, the system incorporates **Retrieval Augmented Generation (RAG)**, leveraging a knowledge base stored in PostgreSQL with the `pg_vector` extension.
+The core of the project is an orchestrator built with FastAPI that manages the avatars' lifecycle and interactions. Each avatar has its own personality, skills, and schedule, defined in a YAML profile. The avatars are powered by language models (LLMs), giving users the flexibility to use local instances (like Ollama or vLLM) or cloud-based services. To enhance the quality and relevance of LLM responses, the system incorporates Retrieval Augmented Generation (RAG), leveraging a knowledge base stored in PostgreSQL with the `pg_vector` extension.
 
 ## Features
 
 -   **Autonomous Avatars**: The avatars are autonomous and can perform tasks without human intervention.
--   **Email Integration**: The avatars can read and reply to emails, maintaining conversation history.
--   **GitHub Integration**: The avatars can participate in GitHub discussions by commenting on issues and pull requests where they are mentioned.
--   **Telegram Integration**: The avatars can send and receive messages on Telegram.
--   **Discord Integration**: The avatars can send and receive messages on Discord.
--   **Retrieval Augmented Generation (RAG)**: Enhances LLM responses by retrieving relevant information from a custom knowledge base, ensuring more accurate and contextually rich replies.
--   **Local LLMs**: The use of local LLMs (via Ollama) ensures privacy and allows for greater control over the models.
--   **Agent Workflow**: Avatar can send internal messages each other enabling collaborative workflows.
--   **Extensible**: The system is designed to be highly extensible. You can easily add new avatars, new connectors, and new functionalities.
+-   **Tool Usage**: Avatars can use external tools to perform actions, such as web searches, calculations, or interacting with other APIs. This feature is powered by the LLM's function calling capabilities.
+-   **Flexible LLM Engine**: Supports multiple LLM backends, including Ollama and any OpenAI-compatible API (e.g., vLLM, Together.ai).
+-   **Multi-Platform Connectors**: Integration with Email, GitHub, Telegram, Discord, Reddit, and Slack.
+-   **Retrieval Augmented Generation (RAG)**: Enhances LLM responses by retrieving relevant information from a custom knowledge base.
+-   **Agent Workflow**: Avatars can send internal messages to each other, enabling collaborative workflows.
+-   **Extensible**: The system is designed to be highly extensible. You can easily add new avatars, connectors, and tools.
 
 ## Architecture
 
 The project is composed of the following components:
 
--   **Orchestrator**: A FastAPI application (`avatar_manager/main.py`) that serves as the entry point of the system. It loads the avatar profiles, schedules the tasks, and exposes an API to interact with the system.
--   **Avatar Profiles**: YAML files located in the `profiles/` directory. Each file defines an avatar, including its name, personality, skills, LLM model, and schedule. It also allows for configuration of the email conversation history limit (`email_history_limit`).
--   **Connectors**: Python modules in the `avatar_manager/connectors/` directory that handle the communication with external services. These are abstracted via a `BaseConnector` interface, making it easy to add new platforms. Currently, there are connectors for:
-    *   Email (IMAP and SMTP)
-    *   GitHub
-    *   Telegram
-    *   Discord
--   **Core**: The `avatar_manager/core/` directory contains the core logic of the avatars, including:
-    *   `generator.py`: Responsible for generating replies and comments using LLMs, now augmented with RAG.
-    *   `embeddings.py`: Handles the generation of vector embeddings for text using Ollama.
--   **Prompts**: The `avatar_manager/prompts/` directory contains the prompt templates used to interact with the LLMs.
--   **Database (PostgreSQL with pg_vector)**: Used for persistent storage of conversation history and the RAG knowledge base. `pg_vector` enables efficient similarity search for retrieving relevant information.
--   **Ollama**: The system relies on a local installation of Ollama to run the LLMs (for both generation and embedding). Each avatar can be configured to use a different model.
--   **Internal Event Bus**: A core component (`avatar_manager/internal_events.py`) facilitating asynchronous, decoupled communication between avatars. Avatars can publish messages (e.g., task hand-offs, escalation requests) to the bus, and other avatars can subscribe to specific message types or messages addressed directly to them, enabling complex collaborative workflows.
+-   **Orchestrator**: A FastAPI application (`avatar_manager/main.py`) that serves as the entry point of the system.
+-   **Avatar Profiles**: YAML files in the `profiles/` directory defining each avatar's personality, skills, and configuration.
+-   **Connectors**: Modules in `avatar_manager/connectors/` for communication with external services.
+-   **Tools**: Modules in `avatar_manager/tools/` that define the tools available to the avatars.
+-   **Core**: The `avatar_manager/core/` directory contains the core logic, including the `generator.py` which now handles tool usage.
+-   **LLM Engines**: Support for Ollama and OpenAI-compatible APIs.
 
 ## How it works
 
-1.  The **Orchestrator** loads the avatar profiles from the `profiles/` directory and initializes the configured connectors for each avatar.
-2.  A scheduler triggers the execution of tasks for each avatar, according to its schedule.
-3.  The **Connectors** are used to fetch data from external services (e.g., unread emails, GitHub notifications, Telegram/Discord messages).
+1.  The **Orchestrator** loads the avatar profiles and the available tools.
+2.  The scheduler triggers tasks for each avatar.
+3.  The **Connectors** fetch data from external services.
 4.  For each incoming message, the `generator.py` module:
-    *   Uses an LLM to decide whether a reply is needed (for emails).
-    *   Generates an embedding of the incoming message/query.
-    *   Performs a similarity search in the **RAG knowledge base** (PostgreSQL with `pg_vector`) to retrieve relevant contextual information.
-    *   Uses another LLM to generate the content of the reply, based on the avatar's personality, the conversation history (for emails), the incoming message, and the **retrieved RAG context**.
-5.  The **Connectors** are used to send the reply to the external service.
+    *   Provides the LLM with the user's message, the conversation history, RAG context, and the definitions of the tools the avatar is allowed to use.
+    *   The LLM decides whether to respond directly or to use a tool.
+    *   If a tool is chosen, the system executes the tool's Python function and sends the result back to the LLM.
+    *   The LLM uses the tool's result to generate a final response.
+5.  The **Connectors** send the final reply.
 
 ## Getting Started
 
@@ -77,27 +67,14 @@ The project is composed of the following components:
     ```bash
     cp .env.example .env
     ```
-5.  Update the `.env` file with your credentials for the email, GitHub, Telegram, and Discord accounts of your avatars, and your PostgreSQL `DATABASE_URL`.
-    ```
-    # Example .env entries
-    DATABASE_URL="postgresql://your_rag_user:your_password@localhost:5432/rag_db"
-
-    # For a specific avatar (e.g., JOHN_DOE)
-    JOHN_DOE_EMAIL_ADDRESS="john.doe@example.com"
-    JOHN_DOE_EMAIL_PASSWORD="your_email_password"
-    JOHN_DOE_IMAP_SERVER="imap.example.com"
-    JOHN_DOE_SMTP_SERVER="smtp.example.com"
-
-    JOHN_DOE_GITHUB_USERNAME="john_doe_gh"
-    JOHN_DOE_GITHUB_TOKEN="your_github_token"
-
-    JOHN_DOE_TELEGRAM_TOKEN="your_telegram_bot_token"
-
-    JOHN_DOE_DISCORD_TOKEN="your_discord_bot_token"
-    ```
+5.  Update the `.env` file with all required credentials. This includes:
+    - The `DATABASE_URL` for PostgreSQL.
+    - The **Google Search API credentials** for the `web_search` tool. Follow the guide in `examples/setup_google_search_api.html` to get your `GOOGLE_SEARCH_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID`.
+    - The credentials for each avatar's connectors (Email, GitHub, etc.), using `.env.example` as a template.
 6.  **Download Ollama Avatar and Embedding Models**:
     ```bash
-    ollama pull llama3:8b # Default avatar model
+    ollama pull llama3:8b        # Default avatar model
+    ollama pull llama3.1:8b      # If You want to use Tools
     ollama pull nomic-embed-text # Or your chosen embedding model
     ```
 7.  **Ingest Knowledge Base**:
@@ -126,8 +103,15 @@ The API will be available at `http://127.0.0.1:8000`.
 -   `GET /`: Returns a welcome message.
 -   `GET /avatars`: Returns the loaded avatar profiles.
 -   `GET /avatars/{avatar_id}`: Returns the profile of a specific avatar.
--   `PUT /log_level?level=DEBUG`: Sets the logging level.
+-   `PUT /log_level?level=DEBUG`: Sets the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
 -   `POST /trigger_schedule`: Manually triggers the execution of the tasks.
+
+For example:
+
+```bash
+curl -X POST 'http://127.0.0.1:8000/trigger_schedule'
+```
+ 
 
 ## Usage Examples
 
@@ -147,36 +131,116 @@ You can view these examples by opening the following HTML files in your browser:
 - [Multi-Channel Customer Support with Escalation Crew](./examples/crew_customer_support.html)
 - [Content Curation and Dissemination Crew](./examples/crew_content_curation.html)
 
+
 ## Configuration
+
+### LLM Configuration
+
+You can configure the LLM engine globally in `config.yaml`.
+
+```yaml
+# config.yaml
+llm:
+  default_engine: "ollama"  # Can be 'ollama' or 'openai_compatible'
+  default_model: "llama3:8b"
+  default_options:
+    temperature: 0.7
+  filter_model: "llama3:8b"
+  openai_compatible:
+    api_base: "" # e.g. http://localhost:8000/v1 for a local vLLM instance, http://localhost:11434/v1 for Llama.cpp
+    api_key: ""    # Optional API key
+```
+
+- `default_engine`: Choose between `ollama` and `openai_compatible`.
+- `openai_compatible`: If you use `openai_compatible`, you must provide the `api_base` URL for your LLM server. An `api_key` can also be provided if required by the service.
 
 ### Avatars
 
-To add a new avatar, create a new YAML file in the `profiles/` directory. You can use the existing profiles as a template. The following fields are available:
+To add a new avatar, create a new YAML file in the `profiles/` directory. You can override the global LLM settings and enable tools on a per-avatar basis.
 
 -   `name`: The avatar's name.
 -   `personality`: A description of the avatar's personality.
 -   `skills`: A list of the avatar's skills.
--   `llm_model`: The LLM to use for this avatar (e.g., `llama3:8b`).
--   `llm_options`: The options to use with the LLM (e.g., `temperature`, `top_p`).
--   `email_history_limit`: (Optional) The number of past email messages to include in the conversation history for the LLM. Defaults to 10.
--   `gender`: The avatar's gender.
--   `birth_date`: The avatar's birth date.
--   `country`: The avatar's country.
--   `image_url`: The URL of the avatar's image.
 -   `schedule`: The avatar's schedule.
+-   `tools`: (Optional) A list of tools the avatar is allowed to use (e.g., `["web_search"]`).
 
-### Credentials
+**LLM settings for an avatar (Optional):**
+-   `llm_engine`: Override the default engine. **Note:** Tool usage is only supported for `openai_compatible` engines.
+-   `llm_model`: The model to use for this avatar.
+-   `llm_api_base`: The API base URL for the `openai_compatible` engine.
 
-The credentials for the external services are stored in the `.env` file. The variable names are prefixed with the avatar ID (e.g., `JOHN_DOE_EMAIL_ADDRESS`).
+### Tool Usage
+
+AI-Crew allows avatars to use tools to interact with the outside world beyond simple chat.
+
+#### How it Works
+
+The tool usage feature leverages the function-calling capabilities of modern LLMs. When an avatar receives a prompt, it can decide to call one of the tools it has been configured to use. The system executes the tool, and the result is fed back to the avatar, which then formulates a final response.
+
+#### Creating a New Tool
+
+Adding a new tool is simple:
+
+1.  **Create a Python file** in the `avatar_manager/tools/` directory (e.g., `my_tool.py`).
+2.  **Define the execution function**. The name of the function should match the name of the file (e.g., `def my_tool(...)`).
+3.  **Define the tool's specification** in a `get_tool_definition()` function within the same file. This definition follows the OpenAI function calling specification.
+
+**Example: `avatar_manager/tools/calculator.py`**
+
+```python
+# The function that performs the action
+def calculator(expression: str):
+    try:
+        return eval(expression)
+    except Exception as e:
+        return f"Error: {e}"
+
+# The definition the LLM will see
+def get_tool_definition():
+    return {
+        "type": "function",
+        "function": {
+            "name": "calculator",
+            "description": "Evaluate a mathematical expression.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "The mathematical expression to evaluate.",
+                    }
+                },
+                "required": ["expression"],
+            },
+        }
+    }
+```
+
+#### Enabling Tools for an Avatar
+
+To allow an avatar to use a tool, add the tool's name (the filename without `.py`) to the `tools` list in the avatar's profile YAML file.
+
+```yaml
+# profiles/math_bot.yaml
+name: "MathBot"
+personality: "A bot that loves to calculate things."
+llm_engine: "openai_compatible"
+tools:
+  - "calculator"
+  - "web_search"
+  - "wikipedia"
+```
 
 ## Known Limitations
 
-This project is a Proof of Concept (POC) and is not intended for production use without further development. Key limitations include:
+This project is a Proof of Concept (POC) and is not intended for production use without further development. Key limitations include
 
 -   **Inefficient Polling:** The connectors for Telegram and Discord use polling (periodic checks) to fetch updates, which is inefficient and can lead to delays. For a production environment, this should be replaced with a webhook-based system.
 -   **Hardware Requirements:** The use of local LLMs via Ollama can be resource-intensive. Running multiple avatars with large models may require a powerful machine with significant RAM and a capable GPU.
 -   **Lack of Automated Testing:** The project currently lacks a suite of automated tests. This is a critical component for ensuring reliability and stability in a production system.
 -   **Database Tuning:** Missing indexes and cleanup procedures.
+-   **Tool Calling Engine Support**: The tool calling feature is currently only supported by `openai_compatible` LLM engines. The native `ollama` engine does not support this functionality, but you can use Llama.cpp interface anyway.
+
 
 ## How to contribute
 

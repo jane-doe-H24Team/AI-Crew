@@ -4,10 +4,14 @@ app:
 
 # LLM settings
 llm:
+  default_engine: "openai_compatible"  # Can be 'ollama' or 'openai_compatible'
   default_model: "llama3:8b"
   default_options:
     temperature: 0.7
   filter_model: "llama3:8b" # Model for should_reply_to_email
+  openai_compatible:
+    api_base: "http://localhost:11434/v1" # e.g., http://localhost:8000/v1 for a local vLLM instance
+    api_key: ""    # Optional API key
 
 # RAG settings
 rag:
@@ -16,7 +20,7 @@ rag:
   tokenizer_encoding: "cl100k_base"
   knowledge_base_dir: "knowledge_base"
   ingest_file_extensions: [".txt", ".md", ".html", ".htm"]
-  distance_threshold: 0.5 # Max L2 distance for RAG retrieval. Lower is more similar.
+  distance_threshold: 0.4 # Max L2 distance for RAG retrieval. Lower is more similar.
 
 # Database settings
 database:
@@ -30,6 +34,10 @@ embeddings:
 avatar:
   default_email_history_limit: 10
 
+# Tools settings
+tools:
+  default_search_language: 'it'
+
 # Scheduler settings
 scheduler:
   email_check_interval_minutes: 10
@@ -40,4 +48,7 @@ scheduler:
   telegram_check_jitter_seconds: 90
   discord_check_interval_minutes: 5
   discord_check_jitter_seconds: 90
-
+  reddit_check_interval_minutes: 5
+  reddit_check_jitter_seconds: 90
+  slack_check_interval_minutes: 5
+  slack_check_jitter_seconds: 90

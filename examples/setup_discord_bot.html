@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set Up a Discord Bot</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #2c3e50; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        .warning { border-left: 4px solid #f39c12; padding-left: 15px; background-color: #fef9e7; }
+        .token { color: #c0392b; font-weight: bold; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>How to Set Up a Discord Bot for AI-Crew</h1>
+    <p>This guide will walk you through creating a Discord Bot and getting the necessary credentials to use with the AI-Crew application.</p>
+
+    <h2>Step 1: Create the Discord Application and Bot</h2>
+    <p>First, you need to register a new application with Discord to get your bot's credentials.</p>
+    <ul>
+        <li>Go to the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a> and log in.</li>
+        <li>Click the <strong>"New Application"</strong> button in the top-right corner and give it a name (e.g., "AI-Crew Avatar").</li>
+        <li>Navigate to the <strong>"Bot"</strong> tab in the left-hand menu.</li>
+        <li>
+            <div class="warning">
+                <p><strong>Crucial Step:</strong> Under the "Privileged Gateway Intents" section, you must enable two toggles:</p>
+                <ul>
+                    <li><strong>SERVER MEMBERS INTENT</strong></li>
+                    <li><strong>MESSAGE CONTENT INTENT</strong></li>
+                </ul>
+                <p>The bot will not work without these permissions.</p>
+            </div>
+        </li>
+        <li>Click the <strong>"Reset Token"</strong> button (or "View Token") to reveal your bot's token. This is a secret credential.</li>
+        <li>Copy the token. This is the value you need for the <code>AVATAR_NAME_DISCORD_TOKEN</code> variable in your <code>.env</code> file.</li>
+    </ul>
+
+    <h2>Step 2: Create a Private Server for Testing</h2>
+    <p>You need a private space where you and your bot can interact.</p>
+    <ul>
+        <li>In your Discord app, click the <strong>`+`</strong> icon in the server list on the left.</li>
+        <li>Choose <strong>"Create My Own"</strong>, then "For me and my friends".</li>
+        <li>Give your server a name (e.g., "AI-Crew Testing") and click "Create".</li>
+    </ul>
+
+    <h2>Step 3: Invite the Bot to Your Server</h2>
+    <p>Now you need to generate an invitation link to add the bot to the server you just created.</p>
+    <ul>
+        <li>Go back to the Discord Developer Portal page for your application.</li>
+        <li>Navigate to the <strong>"OAuth2"</strong> tab and then click on <strong>"URL Generator"</strong>.</li>
+        <li>In the "Scopes" section, check the box for <code>bot</code>.</li>
+        <li>A new "Bot Permissions" section will appear below. Check the following boxes:
+            <ul>
+                <li><strong>Send Messages</strong></li>
+                <li><strong>Read Message History</strong></li>
+            </ul>
+        </li>
+        <li>Scroll to the bottom and copy the **Generated URL**.</li>
+        <li>Paste this URL into your web browser and press Enter.</li>
+        <li>An authorization screen will appear. Select the test server you just created from the dropdown menu and click "Continue" and then "Authorize".</li>
+    </ul>
+
+    <h2>Step 4: Run the Test</h2>
+    <p>You are all set! After completing the steps above, you can start testing.</p>
+    <ul>
+        <li>Ensure your AI-Crew application is running with the correct Discord token in the <code>.env</code> file.</li>
+        <li>Open your test server in Discord. You should see your bot in the user list on the right.</li>
+        <li>Go to any text channel (e.g., <code>#general</code>) and send a message.</li>
+        <li>When the next <code>scheduled_discord_check</code> runs (or you trigger it manually), the avatar should post a reply in the channel.</li>
+    </ul>
+
+</body>
+</html>

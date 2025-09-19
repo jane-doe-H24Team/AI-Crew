@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Guide to Prompt Engineering for AI-Crew Avatars</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        .container { background-color: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        .tip { border-left: 4px solid #3498db; padding-left: 15px; background-color: #eaf5fb; margin-top: 15px; }
+        .code-block { background-color: #ffffff; color: #000000; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .code-block pre { margin: 0; }
+    </style>
+</head>
+<body>
+
+<!--
+ .code-block { background-color: #2d3436; color: #dfe6e9; padding: 15px; border-radius: 5px; overflow-x: auto; }
+-->
+
+    <div class="container">
+        <h1>A Guide to Prompting AI-Crew Avatars</h1>
+        <p>An avatar's response is not magic; it's the result of a carefully constructed <strong>prompt</strong> given to a Large Language Model (LLM). This guide explains the different components you can control to shape your avatar's behavior and personality.</p>
+
+        <h2>The Four Pillars of an Avatar's Context</h2>
+        <p>Think of the final prompt sent to the LLM as being built from four key pillars. By balancing these, you can achieve a wide range of behaviors.</p>
+
+        <h3>1. The Prompt Template (The "Script")</h3>
+        <p>This is the static skeleton of the instructions, found in the <code>avatar_manager/prompts/</code> directory. It defines the overall task for the avatar.</p>
+        <p>It uses <code>{variables}</code> to dynamically insert other pieces of context. A good template is clear, direct, and tells the LLM its role and goal.</p>
+        <div class="code-block">
+<pre><code>You are {avatar_name}.
+Your personality is: {personality}.
+
+This is the recent conversation history:
+{conversation_history}
+
+You have received the following message:
+{message_text}
+
+Write a brief, polite reply.</code></pre></div>
+
+        <h3>2. The Avatar's Personality (The "Character")</h3>
+        <p>This is defined in the <code>personality</code> field of the avatar's YAML profile. It's where you give the avatar its identity, style, and core directives. This text is injected directly into the <code>{personality}</code> variable in the prompt.</p>
+        <ul>
+            <li><strong>Be specific:</strong> Instead of "friendly", try "A cheerful and enthusiastic assistant who uses emojis and loves to help."</li>
+            <li><strong>Define background and language:</strong> "A formal French manager from Paris who speaks concisely." As we discovered, defining the language here gives the avatar a strong, consistent identity.</li>
+        </ul>
+
+        <h3>3. Conversation History (The "Memory")</h3>
+        <p>To avoid stateless, repetitive responses, the system automatically injects the last few messages from the conversation into the <code>{conversation_history}</code> variable. This gives the avatar short-term memory, allowing it to follow up on previous points and have a more natural, coherent dialogue.</p>
+        <p>The number of messages included can be configured via the <code>email_history_limit</code> and <code>chat_history_limit</code> settings.</p>
+
+        <h3>4. Retrieval-Augmented Generation (RAG) (The "Brain")</h3>
+        <p>The RAG system provides the avatar with external, factual knowledge. When a message is received, the system searches your <code>knowledge_base</code> for relevant documents. If found, their content is injected into the <code>{rag_context}</code> variable.</p>
+        <p>This is crucial for avatars that need to answer questions accurately based on specific information (e.g., product details, project documentation, company policies).</p>
+
+        <hr>
+
+        <h2>Fine-Tuning the LLM's Creativity</h2>
+        <p>In the avatar's profile, you can set <code>llm_options</code> to control how the model generates text.</p>
+        <ul>
+            <li><code><strong>temperature</strong></code>: Controls randomness. A higher value (e.g., 0.9) makes replies more creative and unpredictable. A lower value (e.g., 0.2) makes them more focused and deterministic. For factual Q&A, a low temperature is often better.</li>
+            <li><code><strong>top_p</strong></code>: An alternative to temperature for controlling randomness. It's generally recommended to use either <code>temperature</code> or <code>top_p</code>, but not both.</li>
+        </ul>
+
+        <h2>Choosing the Right Model</h2>
+        <p>You can assign different LLMs to different avatars in their profile (<code>llm_model</code>). This allows you to use a powerful, large model for complex tasks (like a coding assistant) and a smaller, faster model for simple interactions (like a basic chat bot), optimizing resource usage.</p>
+
+        <h2>Best Practices & Tips</h2>
+        <div class="tip">
+            <p><strong>1. Instruct in English:</strong> Most LLMs are trained primarily on English data. For maximum reliability and nuance, it is almost always best to write the core instructions in the prompt templates and personality fields in English, even if you expect the final output to be in another language.</p>
+            <p><strong>2. Be Explicit:</strong> Don't assume the LLM knows what you want. If you want a short reply, say "Write a brief reply." If you want a list, say "Provide the answer as a bulleted list."</p>
+            <p><strong>3. Take advantage of multilingualism:</strong>  Most LLMs can understand and respond in multiple languages.
+The most effective way is to define the response type in the prompt template. For example: <code>Write a brief, polite reply to this message, responding in the same language as the original.</code></p>
+            <p><strong>4. Experiment!</strong> The most enjoyable part of this system is experimenting. Tweak the personality, change a single word in the prompt, adjust the temperature, and observe how the avatar's behavior changes. This iterative process is key to achieving the perfect result.</p>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Set Up a Telegram Bot</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        h1, h2, h3 { color: #2c3e50; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", Courier, monospace; }
+        .token { color: #c0392b; font-weight: bold; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>How to Set Up a Telegram Bot for AI-Crew</h1>
+    <p>This guide will walk you through creating a Telegram bot and getting the necessary API token to use with the AI-Crew application. The process is managed entirely through a special bot called the BotFather.</p>
+
+    <h2>Step 1: Talk to the BotFather</h2>
+    <p>The BotFather is Telegram's official bot for creating and managing all other bots.</p>
+    <ul>
+        <li>Open your Telegram app (desktop or mobile).</li>
+        <li>In the search bar, search for the user <strong>@BotFather</strong>. Make sure to select the official one with a blue checkmark next to its name.</li>
+        <li>Start a chat with the BotFather and send the command: <code>/start</code>.</li>
+    </ul>
+
+    <h2>Step 2: Create Your New Bot</h2>
+    <p>Now, you will ask the BotFather to create a new bot for you.</p>
+    <ul>
+        <li>In the chat with the BotFather, send the command: <code>/newbot</code>.</li>
+        <li>The BotFather will then ask you for two things in sequence:
+            <ol>
+                <li><strong>A display name:</strong> This can be anything you like (e.g., "AI-Crew Test Avatar").</li>
+                <li><strong>A username:</strong> This must be unique and, most importantly, it <strong>must end in "bot"</strong>. For example: <code>AICrewTestBot</code> or <code>ai_crew_test_bot</code>. If the username is already taken, you will have to try a different one.</li>
+            </ol>
+        </li>
+    </ul>
+
+    <h2>Step 3: Get the Bot Token</h2>
+    <p>This is the most important step, where you receive your credential.</p>
+    <ul>
+        <li>Once you provide a valid username, the BotFather will congratulate you and send a message containing your bot's <strong>API Token</strong>.</li>
+        <li>The token is a long string of numbers and letters, like <code class="token">1234567890:ABCdEfgHiJkLmNoPqRsTuVwXyZ-12345</code>.</li>
+        <li>This token is a secret. Copy it carefully. This is the value you need for the <code>AVATAR_NAME_TELEGRAM_TOKEN</code> variable in your <code>.env</code> file.</li>
+    </ul>
+
+    <h2>Step 4: Start a Conversation with Your Bot</h2>
+    <p>Unlike Discord, you don't need to invite your bot anywhere. You just need to find it and send it a message to initialize the chat.</p>
+    <ul>
+        <li>In your Telegram app's search bar, search for the username of the bot you just created (e.g., <code>@AICrewTestBot</code>).</li>
+        <li>Click on it in the search results to open a chat window.</li>
+        <li>Click "Start" or send any message (e.g., "Hello") to begin the conversation.</li>
+    </ul>
+
+    <h2>Step 5: Run the Test</h2>
+    <p>You are now ready to test the integration.</p>
+    <ul>
+        <li>Ensure the token you received is correctly saved in your <code>.env</code> file.</li>
+        <li>Start (or restart) your AI-Crew application.</li>
+        <li>Send a new message to your bot in the Telegram chat.</li>
+        <li>When the next <code>scheduled_telegram_check</code> runs (or you trigger it manually), the avatar should receive your message and reply in the chat.</li>
+    </ul>
+
+</body>
+</html>
